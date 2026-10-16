@@ -1,0 +1,22 @@
+# Implementation roadmap
+
+1. Policy foundation: model, boundary tests, parallel core and differential testbench. Run RTL simulation once Icarus is available.
+2. Registered parallel implementation: rule storage, safe configuration mode, request capture, response backpressure. Scoreboard transaction ordering, reset cancellation, and configuration exclusion.
+3. Sequential implementation: one rule per cycle, first-match termination, identical policy and external interface. Compare transaction streams, not cycle-aligned outputs.
+4. Verification: randomized traffic, reset during processing, stalled responses, attempted invalid writes, overlapping rules. Add formal safety and bounded-progress properties with stated assumptions; cover accepted requests and responses to avoid vacuous proofs.
+5. Implementation study: 4/8/16 rules using one cell library, identical constraints, and common feasible clock. Report mapped area, critical paths, cycles, initiation interval, best/worst/average latency. Separate input-dependent response production from arbitrary downstream stalls.
+6. Submission: explain established techniques, actual contributions, limitations, and reproducible evidence. Optional two-comparator variant only after all required checks pass.
+
+Target: 10–14 working days, approximately 60–90 focused hours. Preserve two days for writing and reproduction. Drop switching analysis and intermediate architectures before sacrificing correctness checks.
+
+## Tool gate
+
+Python tests require no third-party packages. RTL simulation needs Icarus Verilog (`iverilog`, `vvp`). Mapping needs Yosys and a characterized cell library; timing additionally needs OpenSTA. Formal work may use SymbiYosys and an appropriate solver. No FPGA vendor suite is required.
+
+## First decisions to understand personally
+
+- Why does explicit deny differ from no match?
+- Why does the lowest-index rule win even if a later rule allows?
+- Why must a request capture its header?
+- Why is a slower matcher not automatically more energy efficient?
+- How do storage and selection overhead limit comparator sharing?
