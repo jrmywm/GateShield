@@ -13,9 +13,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install Icarus Verilog
-        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - name: Install RTL tools
+        run: sudo apt-get update && sudo apt-get install -y iverilog yosys
       - name: Test reference model
         run: python -m unittest discover -s tests -v
       - name: Differential RTL simulation
         run: python scripts/check_rtl.py
+      - name: Registered engine transaction tests
+        run: python scripts/check_engine.py
+      - name: Generic synthesis smoke checks
+        run: python scripts/check_synthesis.py

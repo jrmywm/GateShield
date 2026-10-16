@@ -1,7 +1,7 @@
 # Implementation roadmap
 
-1. Policy foundation: model, boundary tests, parallel core and differential testbench. Run RTL simulation once Icarus is available.
-2. Registered parallel implementation: rule storage, safe configuration mode, request capture, response backpressure. Scoreboard transaction ordering, reset cancellation, and configuration exclusion.
+1. Policy foundation: implemented; core differential simulation passed in CI.
+2. Registered parallel implementation: implemented with rule storage, configuration exclusion, request capture, response backpressure, and transaction tests. Check the current commit's CI for simulation and generic synthesis results.
 3. Sequential implementation: one rule per cycle, first-match termination, identical policy and external interface. Compare transaction streams, not cycle-aligned outputs.
 4. Verification: randomized traffic, reset during processing, stalled responses, attempted invalid writes, overlapping rules. Add formal safety and bounded-progress properties with stated assumptions; cover accepted requests and responses to avoid vacuous proofs.
 5. Implementation study: 4/8/16 rules using one cell library, identical constraints, and common feasible clock. Report mapped area, critical paths, cycles, initiation interval, best/worst/average latency. Separate input-dependent response production from arbitrary downstream stalls.
@@ -11,7 +11,7 @@ Target: 10–14 working days, approximately 60–90 focused hours. Preserve two 
 
 ## Tool gate
 
-Python tests require no third-party packages. RTL simulation needs Icarus Verilog (`iverilog`, `vvp`). Mapping needs Yosys and a characterized cell library; timing additionally needs OpenSTA. Formal work may use SymbiYosys and an appropriate solver. No FPGA vendor suite is required.
+Python tests require no third-party packages. RTL simulation needs Icarus Verilog (`iverilog`, `vvp`). Generic synthesis smoke checks need Yosys. Mapping additionally needs a characterized cell library; timing needs OpenSTA. CI installs Icarus and Yosys on Ubuntu. Formal work may use SymbiYosys and an appropriate solver. No FPGA vendor suite is required.
 
 ## First decisions to understand personally
 

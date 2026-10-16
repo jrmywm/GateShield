@@ -4,22 +4,30 @@ A small packet-header policy engine for studying comparator sharing, policy corr
 
 ## Current milestone
 
-Implemented: policy specification, independent Python model, directed and seeded randomized model tests, parallel combinational RTL matching core, and an Icarus testbench driven by Python-generated vectors.
+Implemented: policy specification, independent Python model, parallel matching core, and registered parallel engine with programmable rule storage, request capture, response backpressure, and configuration exclusion. Python-generated vectors drive both the core testbench and a transaction scoreboard for the engine.
 
-Not implemented yet: registered request/response interface, configuration controller, sequential matcher, formal harness, synthesis and timing scripts. The combinational core is not a complete firewall or a deployable enforcement engine.
+Next: sequential matcher, formal harness, and library-mapped area/timing study. The current Yosys script only checks generic synthesizability. Packet parsing and forwarding integration remain outside this project.
 
 Run from this directory with Python 3.10 or newer:
 
 ```text
 python -m unittest discover -s tests -v
 python scripts/check_rtl.py
+python scripts/check_engine.py
+python scripts/check_synthesis.py
 ```
 
-The second command requires `iverilog` and `vvp` on PATH and generates its intermediate files under the ignored `build/` directory. Missing tools produce an explicit failure, never a passing RTL result. To generate reference vectors without simulating RTL, use `python scripts/check_rtl.py --generate-only`.
+The simulation commands require `iverilog` and `vvp` on PATH. The synthesis command requires `yosys`. Intermediate files go under the ignored `build/` directory. Missing tools produce an explicit failure, never a passing RTL result. Both simulation scripts accept `--generate-only` for generating vectors without running hardware simulation.
 
-GitHub Actions runs both the Python tests and the Icarus differential tests on pushes and pull requests. A workflow definition alone is not evidence that the RTL has passed: check the completed run.
+GitHub Actions runs Python tests, Icarus core and registered-engine simulations, and generic Yosys synthesis checks on pushes and pull requests. A workflow definition alone is not evidence that the RTL has passed: check the completed run for the commit being reviewed.
 
-Initial local validation: 9 Python tests passed and 52,544 reference vectors were generated across 1, 4, 8, and 16 rules. RTL simulation was not run locally because Icarus was unavailable on PATH.
+The original core passed 52,544 differential cases in CI. The engine suite targets 1, 4, 8, and 16 rules with directed and seeded mixed-cycle traffic. It checks policy decisions against the independent Python evaluator and accounts for accepted, completed, and reset-canceled transactions. The checker also verifies handshakes, response production, and payload stability during receiver stalls. These are simulation checks, not formal proofs.
+
+## Engine interface and timing
+
+`rtl/gateshield_parallel.v` implements one outstanding request. Request acceptance captures the header; the next rising edge registers the decision. With no stalls or configuration changes, response consumption occurs on the following edge and the next request is accepted one edge later: initiation interval is three cycles. The combinational core's parallelism does not imply one request per cycle through this wrapper.
+
+Assert `cfg_mode` and hold it until `cfg_active` is observed. This stops new requests immediately while existing work drains. Write one whole packed rule when `cfg_valid && cfg_ready`. An index outside the table is rejected. Deassert `cfg_mode` to leave configuration; requests can resume after the next rising edge. Reset clears rules and cancels pending work.
 
 Read `docs/specification.md` before changing behavior and `docs/roadmap.md` for the remaining milestones.
 
