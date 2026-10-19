@@ -19,7 +19,16 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Differential RTL simulation
         run: python scripts/check_rtl.py
-      - name: Registered engine transaction tests
+      - name: Engine transactions and cross-architecture replay
         run: python scripts/check_engine.py
       - name: Generic synthesis smoke checks
         run: python scripts/check_synthesis.py
+      - name: Upload comparison reports and synthesis logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gateshield-comparison-reports
+          path: |
+            build/*.csv
+            build/stat_*.json
+            build/synthesis_*.log

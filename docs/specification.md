@@ -1,4 +1,4 @@
-# GateShield specification v0.2
+# GateShield specification v0.3
 
 ## Scope and threat model
 
@@ -68,6 +68,14 @@ Invalid response payloads are zero. Valid response payloads remain stable until 
 If edge E0 accepts a request, edge E1 registers its decision and asserts rsp_valid after the edge. Edge E2 can consume the response at the earliest. Edge E3 can accept the next request. Thus response production latency is one clock period and unstalled initiation interval is three cycles. Backpressure can delay consumption indefinitely, so response consumption has no unconditional finite bound. Configuration requests do not cancel pending transactions. Reset does.
 
 The engine uses IDLE, EVALUATE, RESPOND, and CONFIGURE states. All architectures in the later comparison must expose the same policy/update semantics; different response latencies are allowed and measured.
+
+### Sequential-engine cycle contract
+
+The sequential engine captures the request at E0 and checks rule 0 at E1. A match at zero-based rule index k produces a registered response at E(k+1). No match produces a default-deny response at E(N_RULES). Disabled rules still occupy scan cycles. Unsupported protocols never match and take N_RULES scan cycles. Latency is measured from acceptance to response production, excluding downstream stalls.
+
+With no backpressure or configuration requests, earliest response consumption is one edge after production, followed by earliest next request acceptance one edge later. Thus initiation interval is latency+2: 3 cycles best-case, N_RULES+2 worst-case. Configuration requests wait for scanning and response consumption to finish. Reset cancels scanning immediately at the reset edge and clears the policy, including when configuration is pending.
+
+Sequential storage is the same packed register-based table used by the parallel engine. A selection multiplexer exposes one rule to one Boolean comparator group, and a counter visits indices in ascending order. No comparator group is instantiated per rule. Variable decision timing can reveal scan depth; policy confidentiality is outside the threat model.
 
 ## Measurement boundaries
 

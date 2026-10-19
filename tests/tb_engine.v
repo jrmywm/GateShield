@@ -2,6 +2,7 @@
 // The testbench observes handshakes independently and keeps one pending result.
 module tb_engine;
     parameter integer N_RULES = 8;
+    parameter integer SEQUENTIAL = 0;
     localparam integer IW = (N_RULES <= 1) ? 1 : $clog2(N_RULES);
     localparam integer CW = $clog2(N_RULES + 1);
     reg clk = 0;
@@ -14,6 +15,16 @@ module tb_engine;
     reg [7:0] req_protocol;
     wire cfg_active, cfg_ready, req_ready, rsp_valid, rsp_allow, rsp_match_found;
     wire [IW-1:0] rsp_rule_index;
+    generate if (SEQUENTIAL) begin: sequential_engine
+    gateshield_sequential #(.N_RULES(N_RULES)) dut (
+        .clk(clk), .rst(rst), .cfg_mode(cfg_mode), .cfg_active(cfg_active),
+        .cfg_valid(cfg_valid), .cfg_ready(cfg_ready), .cfg_index(cfg_index), .cfg_rule(cfg_rule),
+        .req_valid(req_valid), .req_ready(req_ready), .req_src_ip(req_src_ip),
+        .req_dst_port(req_dst_port), .req_protocol(req_protocol),
+        .rsp_valid(rsp_valid), .rsp_ready(rsp_ready), .rsp_allow(rsp_allow),
+        .rsp_match_found(rsp_match_found), .rsp_rule_index(rsp_rule_index)
+    );
+    end else begin: parallel_engine
     gateshield_parallel #(.N_RULES(N_RULES)) dut (
         .clk(clk), .rst(rst), .cfg_mode(cfg_mode), .cfg_active(cfg_active),
         .cfg_valid(cfg_valid), .cfg_ready(cfg_ready), .cfg_index(cfg_index), .cfg_rule(cfg_rule),
@@ -22,19 +33,25 @@ module tb_engine;
         .rsp_valid(rsp_valid), .rsp_ready(rsp_ready), .rsp_allow(rsp_allow),
         .rsp_match_found(rsp_match_found), .rsp_rule_index(rsp_rule_index)
     );
-    reg [4095:0] path;
+    end endgenerate
+    reg [4095:0] path, response_path;
     integer fd, rc, cycle, ea, ef, ei, er, ec, ew, ev;
     integer pending, pending_allow, pending_found, pending_index;
     integer accepted, completed, canceled, writes, stalls, age;
+    integer response_fd, seen_response, production_latency;
 
     initial begin
         rst = 1; cfg_mode = 0; cfg_valid = 0; req_valid = 0; rsp_ready = 0;
         cfg_index = 0; cfg_rule = 0; req_src_ip = 0; req_dst_port = 0; req_protocol = 0;
         pending = 0; age = 0; accepted = 0; completed = 0; canceled = 0;
         writes = 0; stalls = 0; cycle = 0;
+        seen_response = 0; production_latency = 0;
         if (!$value$plusargs("vectors=%s", path)) $fatal(1, "Missing vector path");
         fd = $fopen(path, "r");
         if (!fd) $fatal(1, "Cannot open engine vectors");
+        if (!$value$plusargs("responses=%s", response_path)) $fatal(1, "Missing response path");
+        response_fd = $fopen(response_path, "w");
+        if (!response_fd) $fatal(1, "Cannot open response transcript");
         while (!$feof(fd)) begin
             // Drive on falling edge and sample before the next rising edge.
             @(negedge clk);
@@ -60,7 +77,13 @@ module tb_engine;
                             (rsp_match_found !== pending_found[0]) ||
                             (rsp_rule_index !== pending_index[IW-1:0]))
                             $fatal(1, "Policy/stability mismatch cycle=%0d", cycle);
+                        if (!seen_response) begin
+                            production_latency = age;
+                            seen_response = 1;
+                        end
                         if (rsp_ready) begin
+                            $fdisplay(response_fd, "%0d %0d %0d %0d", rsp_allow,
+                                rsp_match_found, rsp_rule_index, production_latency);
                             completed = completed + 1;
                             pending = 0;
                         end else stalls = stalls + 1;
@@ -71,9 +94,10 @@ module tb_engine;
                         pending_allow = ea; pending_found = ef; pending_index = ei;
                         accepted = accepted + 1;
                         age = 0;
+                        seen_response = 0;
                     end else if (pending) age = age + 1;
                     // Response must be produced promptly; receiver stalls do not count as failure.
-                    if (pending && !rsp_valid && age > 1)
+                    if (pending && !rsp_valid && age > (SEQUENTIAL ? N_RULES : 1))
                         $fatal(1, "Response production timeout cycle=%0d", cycle);
                     if (cfg_valid && cfg_ready) writes = writes + 1;
                 end
@@ -85,16 +109,17 @@ module tb_engine;
             end else if (!$feof(fd)) $fatal(1, "Malformed engine vector");
         end
         $fclose(fd);
+        $fclose(response_fd);
         if (pending || accepted != completed + canceled)
             $fatal(1, "Outstanding or lost transactions at end");
         if (completed < 100 || writes < N_RULES || stalls < 10 || canceled < 2)
             $fatal(1, "Insufficient transaction coverage");
-        $display("PASS engine rules=%0d cycles=%0d accepted=%0d completed=%0d canceled=%0d writes=%0d stalled_cycles=%0d",
-            N_RULES, cycle, accepted, completed, canceled, writes, stalls);
+        $display("PASS engine sequential=%0d rules=%0d cycles=%0d accepted=%0d completed=%0d canceled=%0d writes=%0d stalled_cycles=%0d",
+            SEQUENTIAL, N_RULES, cycle, accepted, completed, canceled, writes, stalls);
         $finish;
     end
     initial begin
-        #1000000;
+        #10000000;
         $fatal(1, "Global engine test timeout");
     end
 endmodule
