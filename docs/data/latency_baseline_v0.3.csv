@@ -1,0 +1,9 @@
+rules,architecture,common_transactions,min_cycles,max_cycles,mean_cycles
+1,parallel,610,1,1,1.0
+1,sequential,610,1,1,1.0
+4,parallel,623,1,1,1.0
+4,sequential,623,1,4,3.807383627608347
+8,parallel,639,1,1,1.0
+8,sequential,639,1,8,7.165884194053208
+16,parallel,671,1,1,1.0
+16,sequential,671,1,16,13.986587183308496

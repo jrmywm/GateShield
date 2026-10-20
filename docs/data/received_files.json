@@ -1,0 +1,17 @@
+{
+  "received_date": "2026-10-20",
+  "files": [
+    {
+      "file": "0001-Replace-variable-offset-part-selects-with-constant-s.patch",
+      "sha256": "f345e7b057bf107d535fc5f6cd73277e6e60add3024413a06df58f75f1e1053a"
+    },
+    {
+      "file": "0002-Add-library-mapped-area-timing-study-gate-level-repl.patch",
+      "sha256": "3dcbc6d6fcdc8a66fc652bf44cefcee9af037516bd6a578b416ecbdc01b118af"
+    },
+    {
+      "file": "findings.md",
+      "sha256": "82e40184b856b438cd78524d747ad3f3bf7cb12372ab1154afa321d50ad1fe26"
+    }
+  ]
+}

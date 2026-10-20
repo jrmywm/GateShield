@@ -1,0 +1,9 @@
+rules,architecture,generic_cells,register_bit_cells
+1,parallel,2458,169
+4,parallel,6468,492
+8,parallel,11213,921
+16,parallel,20298,1778
+1,sequential,1226,169
+4,sequential,8007,498
+8,sequential,13955,932
+16,sequential,25456,1798

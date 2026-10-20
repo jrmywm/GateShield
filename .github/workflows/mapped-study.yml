@@ -56,6 +56,7 @@ jobs:
         run: python scripts/check_gate_level.py
       - name: Log reproducible result table
         run: |
+          python scripts/summarize_mapping.py
           python - <<'PY'
           from pathlib import Path
           print('MAPPED_CSV_BEGIN')
@@ -72,5 +73,6 @@ jobs:
           name: mapped-study-reports
           path: |
             build/mapped_comparison.csv
+            build/mapped_summary.md
             build/latency_comparison.csv
             build/map/

@@ -1,0 +1,27 @@
+{
+  "liberty_source": "/home/runner/work/GateShield/GateShield/.tools/OpenSTA/examples/sky130hd_tt.lib.gz",
+  "liberty_source_sha256": "210e56be3a3a0907b5241a34d277f664cf4b4d91dcb49a27ff813df4406a5889",
+  "liberty_pruned_sha256": "b35608245da37d45270629961028fc3e254ad47a12afd91a99f5332ce33be284",
+  "library": "sky130_fd_sc_hd__tt_025C_1v80",
+  "yosys_version": "Yosys 0.33 (git sha1 2584903a060)",
+  "abc_output_load_ff": 10,
+  "sta_output_load_pf": 0.01,
+  "io_fraction": 0.2,
+  "uncertainty_ns": 0.1,
+  "common_period_ns": 5,
+  "mapping_targets_ns": [
+    10,
+    3
+  ],
+  "rule_counts": [
+    4,
+    8,
+    16
+  ],
+  "rtl_commit": "fd97b98f391ffe5793d6ef89c50b51530afa30ac",
+  "evidence": {
+    "ci_run_id": 39375335391,
+    "ci_job_id": 118472090557,
+    "url": "https://github.com/jrmywm/GateShield/actions/runs/39375335391"
+  }
+}

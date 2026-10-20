@@ -47,7 +47,7 @@ module gateshield_sequential #(
     assign rsp_rule_index = rsp_valid ? result_index : {INDEX_W{1'b0}};
 
     // Explicit rule select. Written as rule_table[scan_index*108 +: 108] this
-    // costs ~5.7x more generic cells (barrel shifter); see docs/findings.md.
+    // produced a larger shift/mux network in the studied flow; see docs/findings.md.
     reg [107:0] selected_rule_r;
     integer j;
     always @* begin
@@ -107,8 +107,8 @@ module gateshield_sequential #(
                     if (!cfg_mode) state <= IDLE;
                     else if (cfg_valid && cfg_ready) begin
                         // Constant slice per rule, gated by an index compare. A
-                        // variable-offset part-select here synthesizes to a
-                        // barrel shifter over the whole table; see docs/findings.md.
+                        // original variable-offset form produced a large shift/mux
+                        // network in this Yosys flow; see docs/findings.md.
                         for (k = 0; k < N_RULES; k = k + 1)
                             if (cfg_index == k)
                                 rule_table[k*108 +: 108] <= {1'b0, cfg_rule[106:0]};

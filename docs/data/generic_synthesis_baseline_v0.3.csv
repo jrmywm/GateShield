@@ -1,0 +1,9 @@
+rules,architecture,generic_cells,register_bit_cells,other_cells,yosys_version
+1,parallel,2458,169,2289,Yosys 0.33 (git sha1 2584903a060)
+4,parallel,6468,492,5976,Yosys 0.33 (git sha1 2584903a060)
+8,parallel,11213,921,10292,Yosys 0.33 (git sha1 2584903a060)
+16,parallel,20298,1778,18520,Yosys 0.33 (git sha1 2584903a060)
+1,sequential,1226,169,1057,Yosys 0.33 (git sha1 2584903a060)
+4,sequential,8007,498,7509,Yosys 0.33 (git sha1 2584903a060)
+8,sequential,13955,932,13023,Yosys 0.33 (git sha1 2584903a060)
+16,sequential,25456,1798,23658,Yosys 0.33 (git sha1 2584903a060)
