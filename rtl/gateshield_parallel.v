@@ -28,6 +28,7 @@ module gateshield_parallel #(
                      RESPOND = 2'd2, CONFIGURE = 2'd3;
     reg [1:0] state;
     reg [108*N_RULES-1:0] rule_table;
+    integer k;
     reg [31:0] header_src;
     reg [15:0] header_port;
     reg [7:0] header_protocol;
@@ -83,8 +84,14 @@ module gateshield_parallel #(
                 end
                 CONFIGURE: begin
                     if (!cfg_mode) state <= IDLE;
-                    else if (cfg_valid && cfg_ready)
-                        rule_table[cfg_index*108 +: 108] <= {1'b0, cfg_rule[106:0]};
+                    else if (cfg_valid && cfg_ready) begin
+                        // Constant slice per rule, gated by an index compare. A
+                        // variable-offset part-select here synthesizes to a
+                        // barrel shifter over the whole table; see docs/findings.md.
+                        for (k = 0; k < N_RULES; k = k + 1)
+                            if (cfg_index == k)
+                                rule_table[k*108 +: 108] <= {1'b0, cfg_rule[106:0]};
+                    end
                 end
                 default: begin
                     // Recover to a deny-all policy on an illegal FSM encoding.

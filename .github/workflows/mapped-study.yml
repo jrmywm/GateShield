@@ -1,0 +1,76 @@
+name: Mapped area, timing and replay
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mapped-study:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      OPENSTA_COMMIT: b99a8e528de098e4e06dbb6a0bb5423d6ada2f51
+      CUDD_COMMIT: f54f533303640afd5dbe47a05ebeabb3066f2a25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build and RTL tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yosys iverilog cmake g++ make autoconf automake libtool flex bison swig tcl-dev zlib1g-dev libeigen3-dev libfmt-dev
+      - name: Cache pinned timing tools
+        id: tools
+        uses: actions/cache@v4
+        with:
+          path: .tools
+          key: timing-ubuntu24-${{ env.OPENSTA_COMMIT }}-${{ env.CUDD_COMMIT }}-v1
+      - name: Build pinned CUDD and OpenSTA
+        if: steps.tools.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .tools
+          git clone https://github.com/cuddorg/cudd.git .tools/cudd
+          git -C .tools/cudd checkout "$CUDD_COMMIT"
+          cd .tools/cudd
+          autoreconf -fi
+          ./configure --prefix="$GITHUB_WORKSPACE/.tools/cudd-install" --enable-static --disable-shared
+          make -j2
+          make install
+          cd "$GITHUB_WORKSPACE"
+          git clone https://github.com/parallaxsw/OpenSTA.git .tools/OpenSTA
+          git -C .tools/OpenSTA checkout "$OPENSTA_COMMIT"
+          cmake -S .tools/OpenSTA -B .tools/OpenSTA/build -DCMAKE_BUILD_TYPE=Release -DCUDD_DIR="$GITHUB_WORKSPACE/.tools/cudd-install" -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF -DCMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE=OFF
+          cmake --build .tools/OpenSTA/build -j2
+      - name: Reference and RTL checks
+        run: |
+          python -m unittest discover -s tests -v
+          python scripts/check_engine.py
+      - name: Map and evaluate the same netlists at a common 5 ns clock
+        env:
+          STA: ${{ github.workspace }}/.tools/OpenSTA/build/sta
+          GATESHIELD_LIBERTY: ${{ github.workspace }}/.tools/OpenSTA/examples/sky130hd_tt.lib.gz
+        run: python scripts/check_mapping.py
+      - name: Gate-level functional replay
+        run: python scripts/check_gate_level.py
+      - name: Log reproducible result table
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          print('MAPPED_CSV_BEGIN')
+          print(Path('build/mapped_comparison.csv').read_text(), end='')
+          print('MAPPED_CSV_END')
+          print('MAPPING_METADATA_BEGIN')
+          print(Path('build/map/metadata.json').read_text(), end='')
+          print('MAPPING_METADATA_END')
+          PY
+      - name: Preserve reports and mapped netlists
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mapped-study-reports
+          path: |
+            build/mapped_comparison.csv
+            build/latency_comparison.csv
+            build/map/
