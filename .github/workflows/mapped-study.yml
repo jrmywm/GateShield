@@ -20,7 +20,7 @@ jobs:
       - name: Install build and RTL tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y yosys iverilog cmake g++ make autoconf automake libtool flex bison swig tcl-dev zlib1g-dev libeigen3-dev libfmt-dev
+          sudo apt-get install -y yosys iverilog cmake g++ make autoconf automake libtool flex libfl-dev bison swig tcl-dev zlib1g-dev libeigen3-dev libfmt-dev
       - name: Cache pinned timing tools
         id: tools
         uses: actions/cache@v4
